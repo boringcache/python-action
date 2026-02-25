@@ -93,10 +93,12 @@ jobs:
           python-version: '3.12'
           cache-pip: 'false'
 
-      - name: Install uv and create project
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Create uv project and test
         run: |
           set -euo pipefail
-          pip install uv
           mkdir -p /tmp/test-uv && cd /tmp/test-uv
           uv init
           uv add requests
@@ -106,7 +108,6 @@ jobs:
         run: |
           set -euo pipefail
           echo "uv cache dir: $(uv cache dir)"
-          uv cache dir
 
   test-versions:
     needs: build
