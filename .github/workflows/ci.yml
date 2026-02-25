@@ -1,0 +1,145 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  BORINGCACHE_API_TOKEN: ${{ secrets.BORINGCACHE_API_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: boringcache/nodejs-action@v1
+        with:
+          node-version: '22'
+          workspace: boringcache/actions
+
+      - run: npm install
+      - run: npm run build
+      - run: npm test
+
+  test:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: boringcache/nodejs-action@v1
+        with:
+          node-version: '22'
+          workspace: boringcache/actions
+
+      - run: npm install
+      - run: npm run build
+
+      - name: Test action
+        id: python
+        uses: ./
+        with:
+          workspace: boringcache/actions
+          python-version: '3.12'
+
+      - name: Verify Python installed
+        run: |
+          set -euo pipefail
+          echo "python-version output: ${{ steps.python.outputs.python-version }}"
+          echo "python-cache-hit: ${{ steps.python.outputs.python-cache-hit }}"
+          echo "pip-cache-hit: ${{ steps.python.outputs.pip-cache-hit }}"
+          echo "uv-cache-hit: ${{ steps.python.outputs.uv-cache-hit }}"
+          echo "cache-hit: ${{ steps.python.outputs.cache-hit }}"
+          python3 --version
+          python3 --version | grep -q "3.12" || { echo "Expected Python 3.12"; exit 1; }
+
+      - name: Test pip install
+        run: |
+          set -euo pipefail
+          pip install requests
+          python3 -c "import requests; print(requests.__version__)"
+
+  test-uv:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: boringcache/nodejs-action@v1
+        with:
+          node-version: '22'
+          workspace: boringcache/actions
+
+      - run: npm install
+      - run: npm run build
+
+      - name: Setup Python (uv workflow)
+        id: python
+        uses: ./
+        with:
+          workspace: boringcache/actions
+          python-version: '3.12'
+          cache-pip: 'false'
+
+      - name: Install uv and create project
+        run: |
+          set -euo pipefail
+          pip install uv
+          mkdir -p /tmp/test-uv && cd /tmp/test-uv
+          uv init
+          uv add requests
+          uv run python -c "import requests; print(requests.__version__)"
+
+      - name: Verify uv cache dir
+        run: |
+          set -euo pipefail
+          echo "uv cache dir: $(uv cache dir)"
+          uv cache dir
+
+  test-versions:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: boringcache/nodejs-action@v1
+        with:
+          node-version: '22'
+          workspace: boringcache/actions
+
+      - run: npm install
+      - run: npm run build
+
+      - name: Setup Python ${{ matrix.python }}
+        id: python
+        uses: ./
+        with:
+          workspace: boringcache/actions
+          python-version: ${{ matrix.python }}
+
+      - name: Verify Python version
+        run: |
+          set -euo pipefail
+          INSTALLED=$(python3 --version | grep -oE '[0-9]+\.[0-9]+' | head -1)
+          EXPECTED="${{ matrix.python }}"
+          echo "Installed: $INSTALLED, Expected: $EXPECTED"
+          if [[ "$INSTALLED" != "$EXPECTED" ]]; then
+            echo "Python version mismatch!"
+            exit 1
+          fi

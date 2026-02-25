@@ -1,0 +1,77 @@
+name: 'BoringCache Python'
+description: 'Cache once. Reuse everywhere. Setup Python via mise and cache Python + pip + uv with BoringCache.'
+author: 'BoringCache'
+
+inputs:
+  cli-version:
+    description: 'BoringCache CLI version (e.g., v1.0.0). Set to "skip" to disable automatic CLI setup.'
+    required: false
+    default: 'v1.8.0'
+  python-version:
+    description: 'Python version to install via mise. Defaults to .python-version or .tool-versions file if present.'
+    required: false
+    default: ''
+  working-directory:
+    description: 'Working directory. Defaults to repository root.'
+    required: false
+    default: '.'
+  workspace:
+    description: 'BoringCache workspace identifier (e.g., my-org/my-project). Required.'
+    required: false
+  cache-tag:
+    description: 'Cache tag prefix. Defaults to repository name.'
+    required: false
+    default: ''
+  cache-python:
+    description: 'Cache Python installation from mise'
+    required: false
+    default: 'true'
+  cache-pip:
+    description: 'Cache pip download cache'
+    required: false
+    default: 'true'
+  cache-uv:
+    description: 'Cache uv package cache'
+    required: false
+    default: 'true'
+  verbose:
+    description: 'Enable verbose CLI output for debugging'
+    required: false
+    default: 'false'
+  exclude:
+    description: 'Glob patterns to exclude from cache'
+    required: false
+  save-always:
+    description: 'Save cache even if job fails'
+    required: false
+    default: 'false'
+
+outputs:
+  python-version:
+    description: 'Installed Python version'
+  cache-hit:
+    description: 'Whether pip or uv cache was restored'
+  python-cache-hit:
+    description: 'Whether the Python installation cache was restored'
+  pip-cache-hit:
+    description: 'Whether the pip cache was restored'
+  uv-cache-hit:
+    description: 'Whether the uv cache was restored'
+  python-tag:
+    description: 'Cache tag used for Python installation'
+  pip-tag:
+    description: 'Cache tag used for pip cache'
+  uv-tag:
+    description: 'Cache tag used for uv cache'
+  workspace:
+    description: 'Resolved workspace name'
+
+runs:
+  using: 'node24'
+  main: 'dist/restore/index.js'
+  post: 'dist/save/index.js'
+  post-if: "success() || inputs.save-always == 'true'"
+
+branding:
+  icon: 'box'
+  color: 'blue'
