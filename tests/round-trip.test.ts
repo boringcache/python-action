@@ -74,7 +74,7 @@ describe('Python restore/save round-trip', () => {
   it('full round-trip: restore python+pip+uv, save python+pip+uv', async () => {
     (core.getInput as jest.Mock).mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
-        'cli-version': 'v1.8.0',
+        'cli-version': 'v1.9.0',
         'workspace': 'myorg/myproject',
         'cache-tag': '',
         'python-version': '3.12',
@@ -92,7 +92,7 @@ describe('Python restore/save round-trip', () => {
     });
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    expect(ensureBoringCache).toHaveBeenCalledWith({ version: 'v1.8.0' });
+    expect(ensureBoringCache).toHaveBeenCalledWith({ version: 'v1.9.0' });
 
     expect(execBoringCache).toHaveBeenCalledTimes(3);
     expect(execBoringCache).toHaveBeenCalledWith(
