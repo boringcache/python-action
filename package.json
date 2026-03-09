@@ -1,6 +1,6 @@
 {
   "name": "boringcache-python",
-  "version": "1.9.10",
+  "version": "1.9.11",
   "description": "Setup Python with mise and cache via BoringCache.",
   "main": "dist/restore/index.js",
   "scripts": {
