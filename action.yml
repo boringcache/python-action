@@ -8,9 +8,13 @@ inputs:
     required: false
     default: 'v1.12.3'
   python-version:
-    description: 'Python version to install via mise. Defaults to .python-version or .tool-versions file if present.'
+    description: 'Python version to install via mise. Detected from .python-version, .tool-versions, or mise.toml if present.'
     required: false
     default: ''
+  compile:
+    description: 'Compile Python from source. Set to false (default) to use precompiled binaries for faster installs.'
+    required: false
+    default: 'false'
   working-directory:
     description: 'Working directory. Defaults to repository root.'
     required: false

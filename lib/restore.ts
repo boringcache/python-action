@@ -23,6 +23,7 @@ async function run(): Promise<void> {
       workingDirectory: core.getInput('working-directory') || '.',
       cacheTagPrefix: core.getInput('cache-tag') || '',
       cachePython: core.getInput('cache-python') !== 'false',
+      compile: core.getInput('compile') === 'true',
       cachePip: core.getInput('cache-pip') !== 'false',
       cacheUv: core.getInput('cache-uv') !== 'false',
       verbose: core.getInput('verbose') === 'true',
@@ -71,7 +72,7 @@ async function run(): Promise<void> {
     if (pythonCacheHit) {
       await activatePython(pythonVersion);
     } else {
-      await installPython(pythonVersion);
+      await installPython(pythonVersion, inputs.compile);
     }
 
     let pipCacheHit = false;

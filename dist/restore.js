@@ -45,6 +45,7 @@ async function run() {
             workingDirectory: core.getInput('working-directory') || '.',
             cacheTagPrefix: core.getInput('cache-tag') || '',
             cachePython: core.getInput('cache-python') !== 'false',
+            compile: core.getInput('compile') === 'true',
             cachePip: core.getInput('cache-pip') !== 'false',
             cacheUv: core.getInput('cache-uv') !== 'false',
             verbose: core.getInput('verbose') === 'true',
@@ -82,7 +83,7 @@ async function run() {
             await (0, utils_1.activatePython)(pythonVersion);
         }
         else {
-            await (0, utils_1.installPython)(pythonVersion);
+            await (0, utils_1.installPython)(pythonVersion, inputs.compile);
         }
         let pipCacheHit = false;
         if (inputs.cachePip) {

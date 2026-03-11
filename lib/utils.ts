@@ -76,6 +76,11 @@ export async function getPythonVersion(inputVersion: string, workingDir: string)
     }
   } catch {}
 
+  const miseVersion = await readMiseTomlVersion(workingDir, 'python');
+  if (miseVersion) {
+    return miseVersion;
+  }
+
   return '3.12';
 }
 
@@ -151,10 +156,29 @@ async function installMiseWindows(): Promise<void> {
   }
 }
 
-export async function installPython(version: string): Promise<void> {
+async function readMiseTomlVersion(workingDir: string, toolName: string): Promise<string | null> {
+  const miseToml = path.join(workingDir, 'mise.toml');
+  try {
+    const content = await fs.promises.readFile(miseToml, 'utf-8');
+    const toolsMatch = content.match(/\[tools\]([\s\S]*?)(?:\n\[|$)/);
+    if (toolsMatch) {
+      const versionMatch = toolsMatch[1].match(
+        new RegExp(`^\\s*${toolName}\\s*=\\s*["']([^"']+)["']`, 'm')
+      );
+      if (versionMatch) return versionMatch[1];
+    }
+  } catch {}
+  return null;
+}
+
+export async function installPython(version: string, compile: boolean = false): Promise<void> {
   const misePath = getMiseBinPath();
 
-  await exec.exec(misePath, ['install', `python@${version}`]);
+  const env: Record<string, string> = { ...process.env as Record<string, string> };
+  if (!compile) {
+    env.MISE_PYTHON_COMPILE = '0';
+  }
+  await exec.exec(misePath, ['install', `python@${version}`], { env });
   await exec.exec(misePath, ['use', '-g', `python@${version}`]);
 }
 

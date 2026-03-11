@@ -292,7 +292,8 @@ describe('Python restore/save round-trip', () => {
 
     expect(execModule.exec).toHaveBeenCalledWith(
       expect.stringContaining('mise'),
-      ['install', 'python@3.12']
+      ['install', 'python@3.12'],
+      expect.objectContaining({ env: expect.objectContaining({ MISE_PYTHON_COMPILE: '0' }) })
     );
 
     expect(stateStore['cache-python']).toBe('false');

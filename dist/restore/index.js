@@ -42359,6 +42359,7 @@ async function run() {
             workingDirectory: core.getInput('working-directory') || '.',
             cacheTagPrefix: core.getInput('cache-tag') || '',
             cachePython: core.getInput('cache-python') !== 'false',
+            compile: core.getInput('compile') === 'true',
             cachePip: core.getInput('cache-pip') !== 'false',
             cacheUv: core.getInput('cache-uv') !== 'false',
             verbose: core.getInput('verbose') === 'true',
@@ -42396,7 +42397,7 @@ async function run() {
             await (0, utils_1.activatePython)(pythonVersion);
         }
         else {
-            await (0, utils_1.installPython)(pythonVersion);
+            await (0, utils_1.installPython)(pythonVersion, inputs.compile);
         }
         let pipCacheHit = false;
         if (inputs.cachePip) {
@@ -42557,6 +42558,10 @@ async function getPythonVersion(inputVersion, workingDir) {
         }
     }
     catch { }
+    const miseVersion = await readMiseTomlVersion(workingDir, 'python');
+    if (miseVersion) {
+        return miseVersion;
+    }
     return '3.12';
 }
 function getPipCacheDir() {
@@ -42622,9 +42627,27 @@ async function installMiseWindows() {
         await fs.promises.rm(tempDir, { recursive: true, force: true });
     }
 }
-async function installPython(version) {
+async function readMiseTomlVersion(workingDir, toolName) {
+    const miseToml = path.join(workingDir, 'mise.toml');
+    try {
+        const content = await fs.promises.readFile(miseToml, 'utf-8');
+        const toolsMatch = content.match(/\[tools\]([\s\S]*?)(?:\n\[|$)/);
+        if (toolsMatch) {
+            const versionMatch = toolsMatch[1].match(new RegExp(`^\\s*${toolName}\\s*=\\s*["']([^"']+)["']`, 'm'));
+            if (versionMatch)
+                return versionMatch[1];
+        }
+    }
+    catch { }
+    return null;
+}
+async function installPython(version, compile = false) {
     const misePath = getMiseBinPath();
-    await exec.exec(misePath, ['install', `python@${version}`]);
+    const env = { ...process.env };
+    if (!compile) {
+        env.MISE_PYTHON_COMPILE = '0';
+    }
+    await exec.exec(misePath, ['install', `python@${version}`], { env });
     await exec.exec(misePath, ['use', '-g', `python@${version}`]);
 }
 async function activatePython(version) {
