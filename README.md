@@ -11,11 +11,23 @@ Installs Python via [mise](https://mise.jdx.dev), restores cached directories be
   with:
     workspace: my-org/my-project
   env:
-    BORINGCACHE_API_TOKEN: ${{ secrets.BORINGCACHE_API_TOKEN }}
+    BORINGCACHE_SAVE_TOKEN: ${{ secrets.BORINGCACHE_SAVE_TOKEN }}
 
 - run: pip install -r requirements.txt
 - run: pytest
 ```
+
+## Recommended auth model
+
+For new workflows, provide a restore token to every job and only provide a save token to trusted branch/tag jobs:
+
+```yaml
+env:
+  BORINGCACHE_RESTORE_TOKEN: ${{ secrets.BORINGCACHE_RESTORE_TOKEN }}
+  BORINGCACHE_SAVE_TOKEN: ${{ github.event_name == 'pull_request' && '' || secrets.BORINGCACHE_SAVE_TOKEN }}
+```
+
+On pull requests, the action restores caches and skips the post-save step when no save-capable token is configured.
 
 ## Mental model
 
@@ -53,7 +65,7 @@ What gets cached:
   with:
     workspace: my-org/my-project
   env:
-    BORINGCACHE_API_TOKEN: ${{ secrets.BORINGCACHE_API_TOKEN }}
+    BORINGCACHE_SAVE_TOKEN: ${{ secrets.BORINGCACHE_SAVE_TOKEN }}
 
 - run: pip install -r requirements.txt
 - run: pytest
@@ -66,7 +78,7 @@ What gets cached:
   with:
     workspace: my-org/my-project
   env:
-    BORINGCACHE_API_TOKEN: ${{ secrets.BORINGCACHE_API_TOKEN }}
+    BORINGCACHE_SAVE_TOKEN: ${{ secrets.BORINGCACHE_SAVE_TOKEN }}
 
 - run: pip install uv
 - run: uv sync
@@ -81,7 +93,7 @@ What gets cached:
     workspace: my-org/my-project
     python-version: '3.11'
   env:
-    BORINGCACHE_API_TOKEN: ${{ secrets.BORINGCACHE_API_TOKEN }}
+    BORINGCACHE_SAVE_TOKEN: ${{ secrets.BORINGCACHE_SAVE_TOKEN }}
 ```
 
 ### pip only (no uv cache)
@@ -92,7 +104,7 @@ What gets cached:
     workspace: my-org/my-project
     cache-uv: 'false'
   env:
-    BORINGCACHE_API_TOKEN: ${{ secrets.BORINGCACHE_API_TOKEN }}
+    BORINGCACHE_SAVE_TOKEN: ${{ secrets.BORINGCACHE_SAVE_TOKEN }}
 ```
 
 ### uv only (no pip cache)
@@ -103,7 +115,7 @@ What gets cached:
     workspace: my-org/my-project
     cache-pip: 'false'
   env:
-    BORINGCACHE_API_TOKEN: ${{ secrets.BORINGCACHE_API_TOKEN }}
+    BORINGCACHE_SAVE_TOKEN: ${{ secrets.BORINGCACHE_SAVE_TOKEN }}
 ```
 
 ## Inputs
@@ -145,14 +157,15 @@ By default, caches are isolated by OS and architecture. Python packages with nat
 
 | Variable | Description |
 |----------|-------------|
-| `BORINGCACHE_API_TOKEN` | API token (required) |
+| `BORINGCACHE_RESTORE_TOKEN` | Restore-capable token for pull requests and other read-only jobs |
+| `BORINGCACHE_SAVE_TOKEN` | Save-capable token for trusted jobs that should publish cache updates |
 | `BORINGCACHE_DEFAULT_WORKSPACE` | Default workspace (if not specified in inputs) |
 | `PIP_CACHE_DIR` | Override pip cache directory |
 | `UV_CACHE_DIR` | Override uv cache directory |
 
 ## Troubleshooting
 
-- Unauthorized or workspace not found: ensure `BORINGCACHE_API_TOKEN` is set and the workspace exists.
+- Unauthorized or workspace not found: ensure the appropriate BoringCache token is set and the workspace exists.
 - Cache miss: check `workspace` and version detection files.
 - uv cache not saving: ensure `cache-uv` is `true` (default) and uv has been used in the job.
 - uv cache is automatically pruned with `uv cache prune --ci` before saving, which strips pre-built wheels (fast to re-download) and keeps source-built wheels (expensive to rebuild).
