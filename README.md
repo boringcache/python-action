@@ -1,6 +1,10 @@
 # boringcache/python-action
 
-Set up Python via mise and cache Python, pip, and uv with BoringCache.
+Set up Python and cache pip or uv downloads.
+
+## When to use it
+
+Choose this for Python jobs that want runtime setup and package-cache reuse without extra scripting.
 
 ## Quick start
 
@@ -16,7 +20,13 @@ Set up Python via mise and cache Python, pip, and uv with BoringCache.
 - run: pytest
 ```
 
-## What it caches
+## Trust model
+
+- Restore works on pull requests with `BORINGCACHE_RESTORE_TOKEN`.
+- Save is skipped automatically when no save-capable token is configured.
+- Keep save tokens on trusted jobs only.
+
+## What it handles
 
 - Python from `.python-version` or `.tool-versions` (fallback: `3.12`).
 - The Python installation under mise.
@@ -44,7 +54,7 @@ Set up Python via mise and cache Python, pip, and uv with BoringCache.
 | `python-cache-hit` | Whether the Python runtime cache was restored. |
 | `workspace` | Resolved workspace name. |
 
-## Docs
+## Learn more
 
 - [Language actions docs](https://boringcache.com/docs#language-actions)
 - [GitHub Actions auth and trust model](https://boringcache.com/docs#actions-auth)
